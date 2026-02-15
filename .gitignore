@@ -1,0 +1,10 @@
+# Slicer temporary files
+*.tmp
+*.bak
+
+# Assembly scripts (keeping them is fine, but maybe ignore intermediate versions if preferred)
+# assemble_gcode_v[0-9].ps1
+
+# Large G-code files
+# If you want to backup the final results, keep them. 
+# If they are too large (>100MB), Git might complain.
