@@ -4,11 +4,13 @@ Este repositorio contiene los archivos para imprimir 5 marcadores de llaves de f
 
 ## Contenido
 - `Marcador de llaves 2.0_PLA_12m7s.gcode`: El archivo G-code original (1 unidad).
-- `assemble_gcode_v3.ps1`: Script de PowerShell que genera el archivo 5x.
-- `Marcador_de_llaves_5x_v3.gcode`: El archivo final listo para imprimir (5 unidades con expulsión).
+- `assemble_gcode_v3.ps1`: Script de PowerShell específico para este proyecto.
+- `Marcador_de_llaves_5x_v3.gcode`: El archivo final listo para imprimir.
+- `template_multiple_prints.ps1`: **Plantilla reutilizable**. Usa este archivo para aplicar la misma lógica a cualquier otra pieza 3D que quieras imprimir de forma continua.
 
 ## Funcionamiento
-El script `v3` incluye:
+El sistema incluye:
+...
 1. Elevación del cabezal 5cm tras cada impresión.
 2. Movimiento de la cama hacia adelante.
 3. Descenso a 0.5cm.
