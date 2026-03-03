@@ -1,87 +1,94 @@
 # ==============================================================================
-# PLANTILLA PARA IMPRESIÓN CONTINUA CON EXPULSIÓN (Ender 3 V3 KE)
-# ==============================================================================
-# Instrucciones:
-# 1. Abre tu archivo G-code original en un editor de texto (como Notepad++ o VS Code).
-# 2. Identifica los números de línea para el Inicio, el Cuerpo y el Final.
-# 3. Ajusta los índices en la sección "CONFIGURACIÓN DE LÍNEAS" abajo.
-# 4. Ejecuta el script para generar el nuevo archivo.
+# PLANTILLA PARA IMPRESIÓN CONTINUA CON EXPULSIÓN (Ender 3 V3 KE) - v5 (FINAL)
 # ==============================================================================
 
 # --- CONFIGURACIÓN DE ARCHIVOS ---
-$archivoOriginal = "Marcador de llaves 2.0_PLA_12m7s.gcode" # <--- CAMBIA EL NOMBRE AQUÍ
-$archivoResultado = "Multi_Impresion_Personalizada.gcode"   # <--- NOMBRE DEL ARCHIVO FINAL
-$cantidadDePiezas = 5                                      # <--- CUÁNTAS VECES IMPRIMIR
+$archivoOriginal = "GCodeLaminador.gcode" 
+$archivoResultado = "Multi_Impresion_Personalizada.gcode" # Volvemos al nombre deseado
+$cantidadDePiezas = 5
 
-Write-Host "Leyendo archivo original..."
+Write-Host "Leyendo archivo original: $archivoOriginal..."
 $lineas = Get-Content $archivoOriginal
 
-# --- CONFIGURACIÓN DE LÍNEAS (Índices 0-based) ---
-# Tip: En Notepad++, haz (Número de Línea - 1) para obtener el índice.
+# --- BUSCADOR AUTOMÁTICO DE PUNTOS DE CORTE ---
+function Buscar-Linea($patron, $desde = 0) {
+    for ($i = $desde; $i -lt $lineas.Count; $i++) {
+        if ($lineas[$i] -match $patron) { return $i }
+    }
+    return -1
+}
 
-# 1. El Header: Incluye la miniatura, comentarios de configuración inicial.
-$indiceFinHeader = 187 
-$bloqueHeader = $lineas[0..$indiceFinHeader]
+# 1. El fin del preámbulo (metadata y fotos)
+$idxStartExec = Buscar-Linea "EXECUTABLE_BLOCK_START"
+$idxFinHeader = $idxStartExec - 1
 
-# 2. Inicio Común: Comandos hasta JUSTO ANTES de la línea de purga (G28, Temperaturas).
-$indiceFinInitCommon = 199 
-$bloqueInitCommon = $lineas[($indiceFinHeader + 1)..$indiceFinInitCommon]
+# 2. El fin de la inicialización común (hasta M109 o purga)
+$idxM109 = Buscar-Linea "M109" $idxStartExec
+$idxFinPurga = Buscar-Linea "G1 X-1.7 Y20" $idxM109 # Fin de la linea de purga
 
-# 3. Línea de Purga: La línea de limpieza que hace la maquina al lado izquierdo.
-$indiceFinPurga = 202
-$bloquePurga = $lineas[($indiceFinInitCommon + 1)..$indiceFinPurga]
+# 3. El inicio real de la pieza
+$idxStartObjeto = Buscar-Linea "EXCLUDE_OBJECT_START" $idxFinPurga
 
-# 4. Configuración Post-Purga: G92 E0 y preparativos antes de empezar la pieza.
-$indiceFinPostPurga = 226
-$bloquePostPurga = $lineas[($indiceFinPurga + 1)..$indiceFinPostPurga]
+# 4. El fin del ejecutable (donde terminan los comandos de movimiento)
+$idxEndExecutable = Buscar-Linea "EXECUTABLE_BLOCK_END"
 
-# 5. Cuerpo de la Pieza: Desde el primer comando de impresión hasta EXCLUDE_OBJECT_END.
-$indiceFinCuerpo = 17872
-$bloqueCuerpo = $lineas[($indiceFinPostPurga + 1)..$indiceFinCuerpo]
+# 5. Encontrar el fin de la impresión (último exclude end antes del fin)
+$idxEndObjeto = -1
+for ($i = $idxEndExecutable; $i -gt $idxStartObjeto; $i--) {
+    if ($lineas[$i] -match "EXCLUDE_OBJECT_END") {
+        $idxEndObjeto = $i
+        break
+    }
+}
 
-# 6. Shutdown Final: Retracción final, apagar motores, etc.
-$indiceFinShutdown = 17892
-$bloqueShutdown = $lineas[($indiceFinCuerpo + 1)..$indiceFinShutdown]
+if ($idxStartExec -eq -1 -or $idxM109 -eq -1 -or $idxEndObjeto -eq -1) {
+    Write-Error "No se pudieron encontrar los marcadores. Asegúrate que sea un archivo de Creality Print original."
+    exit
+}
 
-# 7. Metadata Extra: Bloque de configuración final (slicer settings).
-$bloqueConfigFinal = $lineas[($indiceFinShutdown + 1)..($lineas.Count-1)]
+# --- ENSAMBLAJE DE BLOQUES ---
+$bloqueHeader = $lineas[0..$idxFinHeader]
+$bloqueInitCommon = $lineas[$idxStartExec..$idxM109]
+$bloquePurga = $lineas[($idxM109 + 1)..$idxFinPurga]
+$bloquePostPurga = $lineas[($idxFinPurga + 1)..($idxStartObjeto - 1)]
+$bloqueCuerpo = $lineas[$idxStartObjeto..$idxEndObjeto]
+$bloqueShutdown = $lineas[($idxEndObjeto + 1)..($idxEndExecutable - 1)]
+$bloqueConfigFinal = $lineas[$idxEndExecutable..($lineas.Count - 1)]
 
 # ==============================================================================
-# RUTINA DE EXPULSIÓN (AJUSTA COORDENADAS SI TU PIEZA ES MÁS GRANDE)
+# RUTINA DE EXPULSIÓN
 # ==============================================================================
 $rutinaExpulsion = @(
     "; --- INICIO RUTINA DE EXPULSIÓN ---",
     "M117 Enfrentando cama a 35C...",
     "M140 S0 ; Apagar cama",
-    "M104 S150 ; Nozzle en espera (evita chorreo)",
-    "G1 X110 Y200 F5000 ; Apartar cabezal mientras enfría",
-    "M190 R35 ; Esperar a que despegue la pieza",
+    "M104 S150 ; Nozzle en espera",
+    "G1 X110 Y200 F5000 ; Apartar cabezal",
+    "M190 R35 ; Esperar enfriamiento",
     "M117 Expulsando pieza...",
-    "G90 ; Coordenadas absolutas",
-    "G1 Z50 F3000   ; Levantar cabezal 5cm",
-    "G1 Y200 F5000  ; Cama hacia atrás (la pieza queda detrás del nozzle)",
-    "G1 X110 F5000  ; Centrar nozzle con la pieza",
-    "G1 Z5 F3000    ; Bajar nozzle a 5mm de la cama",
-    "G1 Y0 F1500    ; Cama hacia adelante (el nozzle empuja la pieza)",
-    "G1 Z50 F3000   ; Levantar para seguridad",
+    "G90",
+    "G1 Z50 F3000   ; Subir 5cm",
+    "G1 Y200 F5000  ; Cama atrás",
+    "G1 X110 F5000  ; Centrar X",
+    "G1 Z5 F3000    ; Bajar a 0.5cm",
+    "G1 Y0 F1500    ; Empujar pieza al frente",
+    "G1 Z50 F3000   ; Seguridad",
     "; --- FIN RUTINA DE EXPULSIÓN ---"
 )
 
-# --- ENSAMBLAJE ---
+# --- PROCESO DE ENSAMBLAJE ---
 Write-Host "Ensamblando G-code para $cantidadDePiezas piezas..."
 $gcodeFinal = @()
 $gcodeFinal += $bloqueHeader
 
 for ($i = 1; $i -le $cantidadDePiezas; $i++) {
-    Write-Host "Procesando pieza numero $i..."
+    Write-Host "Procesando Pieza #$i..."
     $gcodeFinal += ""
     $gcodeFinal += "; #####################################"
     $gcodeFinal += "; PIEZA NUMERO $i"
     $gcodeFinal += "; #####################################"
     
-    if ($i -gt 1) {
-        $gcodeFinal += $rutinaExpulsion
-    }
+    if ($i -gt 1) { $gcodeFinal += $rutinaExpulsion }
     
     $gcodeFinal += $bloqueInitCommon
     
@@ -90,7 +97,6 @@ for ($i = 1; $i -le $cantidadDePiezas; $i++) {
     
     $gcodeFinal += $bloquePostPurga
     $gcodeFinal += $bloqueCuerpo
-    $gcodeFinal += "; --- FIN PIEZA $i ---"
 }
 
 $gcodeFinal += $bloqueShutdown
