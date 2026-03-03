@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -33,7 +34,7 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
-            background-image: 
+            background-image:
                 radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.15) 0px, transparent 50%),
                 radial-gradient(at 100% 100%, rgba(129, 140, 248, 0.15) 0px, transparent 50%);
         }
@@ -77,7 +78,8 @@
             position: relative;
         }
 
-        .upload-section:hover, .upload-section.drag-over {
+        .upload-section:hover,
+        .upload-section.drag-over {
             border-color: var(--primary);
             background: rgba(56, 189, 248, 0.05);
         }
@@ -117,7 +119,8 @@
             font-weight: 400;
         }
 
-        input[type="number"], input[type="text"] {
+        input[type="number"],
+        input[type="text"] {
             background: rgba(15, 23, 42, 0.5);
             border: 1px solid var(--border);
             border-radius: 12px;
@@ -179,14 +182,34 @@
             border: 1px solid #1e293b;
         }
 
-        .console p { margin-bottom: 4px; }
-        .console p.error { color: #ef4444; }
-        .console p.info { color: var(--primary); }
+        .console p {
+            margin-bottom: 4px;
+        }
 
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        .console p.error {
+            color: #ef4444;
+        }
+
+        .console p.info {
+            color: var(--primary);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
 
         .file-info {
             margin-top: 10px;
@@ -196,9 +219,10 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
-        <h1>G-Code Multi-Print</h1>
+        <h1>G-Code Multi-Print <small style="font-size: 0.5em; opacity: 0.5;">v5.1</small></h1>
         <p class="subtitle">Continuous printing simplified for Ender 3 V3 KE</p>
 
         <div class="upload-section" id="dropZone">
@@ -226,6 +250,10 @@
                 <label>Fondo Y (Atrás)</label>
                 <input type="number" id="depthY" value="200">
             </div>
+            <div class="input-group">
+                <label>Altura Z (Empuje)</label>
+                <input type="number" id="pushZ" value="5" step="0.1" min="5">
+            </div>
         </div>
 
         <button class="btn" id="processBtn" disabled>
@@ -239,4 +267,5 @@
 
     <script src="app.js"></script>
 </body>
+
 </html>

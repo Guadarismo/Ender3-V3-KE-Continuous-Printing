@@ -59,6 +59,11 @@ processBtn.addEventListener('click', () => {
         const targetTemp = document.getElementById('temp').value;
         const centerX = document.getElementById('centerX').value;
         const depthY = document.getElementById('depthY').value;
+        const pushZ = parseFloat(document.getElementById('pushZ').value);
+
+        if (pushZ < 5) {
+            throw new Error("SEGURIDAD: La altura Z de empuje debe ser al menos 5.0 mm para evitar colisiones.");
+        }
 
         // Busqueda de marcadores (v5 logic)
         const findLineIdx = (pattern, start = 0) => {
@@ -110,7 +115,7 @@ processBtn.addEventListener('click', () => {
             `G1 Z50 F3000   ; Subir 5cm`,
             `G1 Y${depthY} F5000  ; Cama atrás`,
             `G1 X${centerX} F3000  ; Centrar X`,
-            `G1 Z5 F3000    ; Bajar a 0.5cm`,
+            `G1 Z${pushZ} F3000    ; Bajar a altura de empuje`,
             `G1 Y0 F1500    ; Empujar pieza al frente`,
             `G1 Z50 F3000   ; Seguridad`,
             `; --- FIN RUTINA DE EXPULSIÓN ---`
