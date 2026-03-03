@@ -116,8 +116,16 @@ processBtn.addEventListener('click', () => {
             `; --- FIN RUTINA DE EXPULSIÓN ---`
         ];
 
+        // Helper para agregar arrays grandes de forma segura (evita error de stack)
+        const appendSafe = (target, source) => {
+            for (let j = 0; j < source.length; j++) {
+                target.push(source[j]);
+            }
+        };
+
         // Ensamblaje
-        let finalGcode = [...header];
+        let finalGcode = [];
+        appendSafe(finalGcode, header);
 
         for (let i = 1; i <= copies; i++) {
             log(`Procesando Pieza #${i}...`);
@@ -126,22 +134,22 @@ processBtn.addEventListener('click', () => {
             finalGcode.push(`; PIEZA NUMERO ${i}`);
             finalGcode.push("; #####################################");
 
-            if (i > 1) finalGcode.push(...rutinaExpulsion);
-            
-            finalGcode.push(...initCommon);
+            if (i > 1) appendSafe(finalGcode, rutinaExpulsion);
+
+            appendSafe(finalGcode, initCommon);
 
             if (i === 1) {
-                finalGcode.push(...purga);
+                appendSafe(finalGcode, purga);
             } else {
                 finalGcode.push("; [Purga omitida en piezas posteriores]");
             }
 
-            finalGcode.push(...postPurga);
-            finalGcode.push(...cuerpo);
+            appendSafe(finalGcode, postPurga);
+            appendSafe(finalGcode, cuerpo);
         }
 
-        finalGcode.push(...shutdown);
-        finalGcode.push(...configFinal);
+        appendSafe(finalGcode, shutdown);
+        appendSafe(finalGcode, configFinal);
 
         // Download
         const blob = new Blob([finalGcode.join('\n')], { type: 'text/plain' });
