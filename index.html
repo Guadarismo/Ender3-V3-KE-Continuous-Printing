@@ -194,6 +194,26 @@
             color: var(--primary);
         }
 
+        .disclaimer {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(239, 68, 68, 0.05);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 12px;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            line-height: 1.4;
+        }
+
+        .disclaimer-title {
+            color: #ef4444;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -262,6 +282,14 @@
 
         <div class="console" id="console">
             <p>> Esperando archivo...</p>
+        </div>
+
+        <div class="disclaimer">
+            <span class="disclaimer-title">⚠️ Descargo de Responsabilidad</span>
+            Este software modifica archivos G-code para automatizar movimientos físicos en una impresora 3D. El uso de
+            esta herramienta es bajo su propio riesgo. Ni el desarrollador ni el software se hacen responsables de daños
+            mecánicos, incendios o cualquier otro incidente derivado del uso de los archivos generados. Verifique
+            siempre los límites físicos de su impresora antes de ejecutar el código.
         </div>
     </div>
 
